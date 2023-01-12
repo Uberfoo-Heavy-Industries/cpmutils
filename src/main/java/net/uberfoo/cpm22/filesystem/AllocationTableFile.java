@@ -1,19 +1,18 @@
-package net.uberfoo.z80.cpm22.filesystem;
+package net.uberfoo.cpm22.filesystem;
 
-import net.uberfoo.z80.cpm22.filesystem.CpmDisk.EntryCoordinates;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.stream.IntStream;
 
 public class AllocationTableFile {
 
     private static final Logger LOG = LoggerFactory.getLogger(AllocationTableFile.class);
+
     private final int stat;
     private final String filename;
     private final BitSet flags;
@@ -22,7 +21,7 @@ public class AllocationTableFile {
 
     private final List<Long> blockPointers;
 
-    private final List<EntryCoordinates> allocationIndexes;
+    private final List<CpmDisk.EntryCoordinates> allocationIndexes;
 
     private final DiskParameterBlock diskParameterBlock;
 
@@ -37,8 +36,6 @@ public class AllocationTableFile {
         this.buffer = buffer;
         blockPointers = new LinkedList<>();
         allocationIndexes = new LinkedList<>();
-
-
     }
 
     AllocationTableFile(@NotNull List<AllocationTableEntry> tableEntries,
@@ -74,7 +71,7 @@ public class AllocationTableFile {
                     if (i == blockPointers.size() - 1)
                         blockSize = size % blockSize;
 
-                    LOG.trace("allocating Block #{0}: {1}bytes", i, blockSize);
+                    LOG.trace("allocating Block #{}: {}bytes", i, blockSize);
 
                     ByteBuffer block = ByteBuffer.allocate(blockSize);
                     return buffer.slice((int) (blockPointers.get(i).longValue() * diskParameterBlock.getBlockSize()), blockSize);
@@ -85,7 +82,7 @@ public class AllocationTableFile {
     }
 
     public void delete(ByteBuffer buffer) throws IOException {
-        for (EntryCoordinates x : allocationIndexes) {
+        for (CpmDisk.EntryCoordinates x : allocationIndexes) {
             // Write unused byte to start of entry
             buffer.put((int) ((x.block() * diskParameterBlock.getBlockSize()) + diskParameterBlock.getOffsetBytes()
                     + (AllocationBlock.ENTRY_SIZE * x.index())), (byte)0xE5);
@@ -99,7 +96,7 @@ public class AllocationTableFile {
     private void processEntry(@NotNull AllocationTableEntry x) {
         recordCount += x.getRecordCount();
         byteCount = x.getBc();
-        allocationIndexes.add(new EntryCoordinates(x.getAllocBlockPointer(), x.getIndex()));
+        allocationIndexes.add(new CpmDisk.EntryCoordinates(x.getAllocBlockPointer(), x.getIndex()));
         blockPointers.addAll(x.getBlockPointers().stream().filter(p -> p != 0x00).toList());
     }
 
@@ -130,7 +127,7 @@ public class AllocationTableFile {
         return Collections.unmodifiableList(blockPointers);
     }
 
-    List<EntryCoordinates> getAllocationIndexes() {
+    List<CpmDisk.EntryCoordinates> getAllocationIndexes() {
         return allocationIndexes;
     }
 

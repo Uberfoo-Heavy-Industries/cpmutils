@@ -1,7 +1,9 @@
-package net.uberfoo.z80.cpm22.filesystem.test;
+package net.uberfoo.cpm22.filesystem.test;
 
-import net.uberfoo.z80.cpm22.filesystem.CpmDisk;
-import net.uberfoo.z80.cpm22.filesystem.DiskParameterBlock;
+import net.uberfoo.cpm22.filesystem.CpmDisk;
+import net.uberfoo.cpm22.filesystem.DiskParameterBlock;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
@@ -16,8 +18,10 @@ import static org.hamcrest.Matchers.is;
 
 public class CpmDiskIntegrationTest {
 
+    static Logger logger = LogManager.getLogger(CpmDiskIntegrationTest.class);
     @Test
     public void testZ80RetroDiskImage() throws Exception {
+        logger.info("Z80RetroDiskImage");
         try (FileChannel channel = FileChannel.open(Path.of(ClassLoader.getSystemResource("cpmdisk.img").toURI()),
                 StandardOpenOption.WRITE, StandardOpenOption.READ)) {
             var fileBuffer = ByteBuffer.allocate((int) channel.size());

@@ -1,4 +1,4 @@
-package net.uberfoo.z80.cpm22.filesystem;
+package net.uberfoo.cpm22.filesystem;
 
 import static java.lang.Math.*;
 
@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.LinkedList;

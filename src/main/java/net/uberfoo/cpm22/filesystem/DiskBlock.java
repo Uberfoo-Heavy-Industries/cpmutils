@@ -1,4 +1,4 @@
-package net.uberfoo.z80.cpm22.filesystem;
+package net.uberfoo.cpm22.filesystem;
 
 public class DiskBlock {
 

@@ -1,13 +1,13 @@
-package net.uberfoo.z80.cpm22.filesystem.test;
+package net.uberfoo.cpm22.filesystem.test;
 
-import net.uberfoo.z80.cpm22.filesystem.AllocationTableFile;
-import net.uberfoo.z80.cpm22.filesystem.CpmDisk;
-import net.uberfoo.z80.cpm22.filesystem.DiskParameterBlock;
+import net.uberfoo.cpm22.filesystem.CpmDisk;
+import net.uberfoo.cpm22.filesystem.AllocationTableFile;
+import net.uberfoo.cpm22.filesystem.DiskParameterBlock;
+import org.hamcrest.MatcherAssert;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -36,10 +36,10 @@ public class CpmDiskTest {
         }
 
         // Test can't find file under different user number
-        assertThat("File is not present under different user number", disk.findFile("TEST.TXT", 0x01).isEmpty());
+        MatcherAssert.assertThat("File is not present under different user number", disk.findFile("TEST.TXT", 0x01).isEmpty());
 
         disk.deleteFile("TEST.TXT", 0x00);
-        assertThat("File is no longer present.", disk.findFile("TEST.TXT", 0x00).isEmpty());
+        MatcherAssert.assertThat("File is no longer present.", disk.findFile("TEST.TXT", 0x00).isEmpty());
         assertThat("File system is empty", disk.getFilesStream().count() == 0);
     }
 
@@ -59,7 +59,7 @@ public class CpmDiskTest {
         }
 
         disk.deleteFile("tiny", 0x05);
-        assertThat("File is no longer present.", disk.findFile("tiny", 0x05).isEmpty());
+        MatcherAssert.assertThat("File is no longer present.", disk.findFile("tiny", 0x05).isEmpty());
         assertThat("File system is empty", disk.getFilesStream().count() == 0);
     }
 

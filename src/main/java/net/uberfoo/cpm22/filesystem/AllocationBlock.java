@@ -1,10 +1,15 @@
-package net.uberfoo.z80.cpm22.filesystem;
+package net.uberfoo.cpm22.filesystem;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
 public class AllocationBlock extends DiskBlock {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AllocationBlock.class);
 
     static final int ENTRY_SIZE = 32;
 
@@ -16,7 +21,7 @@ public class AllocationBlock extends DiskBlock {
         super(index, dpb);
         numEntries = dpb.getBlockSize() / ENTRY_SIZE;
         this.allocationTable = new AllocationTableEntry[numEntries];
-        System.out.println(" --- Allocation table #" + index);
+        LOG.trace(" --- Allocation table #{}", index);
 
         // Iterate over the entries in the allocation block
         for (int i = 0; i < numEntries; i++) {
@@ -24,7 +29,7 @@ public class AllocationBlock extends DiskBlock {
             block.get(entryBytes);
 
             allocationTable[i] = new AllocationTableEntry(index, i, entryBytes, dpb);
-            System.out.println(allocationTable[i]);
+            LOG.trace(allocationTable[i].toString());
         }
     }
 

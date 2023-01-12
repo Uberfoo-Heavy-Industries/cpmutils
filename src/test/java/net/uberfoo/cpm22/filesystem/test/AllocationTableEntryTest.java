@@ -1,10 +1,9 @@
-package net.uberfoo.z80.cpm22.filesystem.test;
+package net.uberfoo.cpm22.filesystem.test;
 
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
-import net.uberfoo.z80.cpm22.filesystem.AllocationBlock;
-import net.uberfoo.z80.cpm22.filesystem.AllocationTableEntry;
+import net.uberfoo.cpm22.filesystem.AllocationTableEntry;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
