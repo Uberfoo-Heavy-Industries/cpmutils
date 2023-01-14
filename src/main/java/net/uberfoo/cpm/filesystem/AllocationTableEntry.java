@@ -1,4 +1,4 @@
-package net.uberfoo.cpm22.filesystem;
+package net.uberfoo.cpm.filesystem;
 
 import static java.lang.Math.*;
 

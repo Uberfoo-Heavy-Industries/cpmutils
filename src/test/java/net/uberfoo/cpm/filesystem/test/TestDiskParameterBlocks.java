@@ -1,6 +1,6 @@
-package net.uberfoo.cpm22.filesystem.test;
+package net.uberfoo.cpm.filesystem.test;
 
-import net.uberfoo.cpm22.filesystem.DiskParameterBlock;
+import net.uberfoo.cpm.filesystem.DiskParameterBlock;
 
 public class TestDiskParameterBlocks {
 

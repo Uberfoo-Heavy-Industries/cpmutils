@@ -1,4 +1,4 @@
-package net.uberfoo.cpm22.filesystem;
+package net.uberfoo.cpm.filesystem;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;

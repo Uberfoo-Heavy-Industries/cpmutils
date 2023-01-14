@@ -1,7 +1,7 @@
-package net.uberfoo.cpm22.filesystem.test;
+package net.uberfoo.cpm.filesystem.test;
 
-import net.uberfoo.cpm22.filesystem.CpmDisk;
-import net.uberfoo.cpm22.filesystem.DiskParameterBlock;
+import net.uberfoo.cpm.filesystem.CpmDisk;
+import net.uberfoo.cpm.filesystem.DiskParameterBlock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
