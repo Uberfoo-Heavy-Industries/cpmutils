@@ -129,6 +129,14 @@ public class CpmDisk {
                 .flatMap(x -> x.getUnusedEntries().map(y -> new EntryCoordinates(x.getIndex(), y)));
     }
 
+    public DiskParameterBlock getDpb() {
+        return dpb;
+    }
+
+    public long size() {
+        return dpb.getFilesystemSize();
+    }
+
     public Optional<AllocationTableFile> findFile(@NotNull String filename, int stat) {
         return getFilesStream()
                 .filter(x -> x.getFilename().equalsIgnoreCase(filename))
