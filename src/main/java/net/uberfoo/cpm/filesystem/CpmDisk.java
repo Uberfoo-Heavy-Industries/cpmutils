@@ -20,20 +20,46 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+/**
+ * Represents a single CP/M format disk.
+ */
 public class CpmDisk {
 
     private static final Logger LOG = LoggerFactory.getLogger(CpmDisk.class);
 
+    /**
+     * Represents a set of unique coordinates for a file allocation table entry.
+     *
+     * @param block Allocation block number of entry.
+     * @param index Index of entry with the allocation block.
+     */
     protected record EntryCoordinates(long block, int index) {}
 
     private final ByteBuffer buffer;
     private final DiskParameterBlock dpb;
     private List<AllocationBlock> allocationBlocks;
 
+    /**
+     * Creates a new disk with the supplied parameters
+     * from the supplied file channel. This constructor
+     * will map the file into memory.
+     *
+     * @param dpb The disk parameters.
+     * @param channel The file channel of the disk image.
+     * @throws IOException If there is a filesystem error.
+     */
     public CpmDisk(DiskParameterBlock dpb, FileChannel channel) throws IOException {
         this(dpb, channel.map(FileChannel.MapMode.READ_WRITE, channel.position(), dpb.getFilesystemSize()));
     }
 
+    /**
+     * Creates a new disk with the supplied parameters
+     * from the supplied byte buffer of a disk image.
+     *
+     * @param dpb The disk parameters.
+     * @param buffer The buffer containing the disk image.
+     * @throws IOException If there is a filesystem error.
+     */
     public CpmDisk(DiskParameterBlock dpb, ByteBuffer buffer) throws IOException {
         LOG.info("Loading CP/M filesystem.");
         this.dpb = dpb;
@@ -41,6 +67,19 @@ public class CpmDisk {
         parseAllocationBlocks();
     }
 
+    /**
+     * Creates a new filesystem according to the supplied
+     * disk parameters. The supplied byte buffer must be
+     * positioned to the beginning of the location where
+     * the filesystem will be written. The method will
+     * fill the buffer with 0xE5 for block size bytes for
+     * the number of blocks according to the disk parameters.
+     *
+     * @param dpb The disk parameters.
+     * @param buffer The buffer to create the filesystem in.
+     * @return A CpmDisk instance representing the new filesystem.
+     * @throws IOException If an error occurs with the buffer.
+     */
     public static CpmDisk makeFilesystem(DiskParameterBlock dpb, ByteBuffer buffer) throws IOException {
         LOG.info("Creating CP/M filesystem with disk parameter block: {}", dpb);
         int start = buffer.position();
@@ -62,6 +101,13 @@ public class CpmDisk {
         }
     }
 
+    /**
+     * Refresh this disk by flushing to disk if this
+     * is a memory mapped file. Then the allocation
+     * table is reparsed from the buffer.
+     *
+     * @throws IOException If an error occurs with the buffer
+     */
     public void refresh() throws IOException {
         if (buffer instanceof MappedByteBuffer mapped) {
             mapped.force();
@@ -69,10 +115,20 @@ public class CpmDisk {
         parseAllocationBlocks(); // Re-read the directory blocks
     }
 
+    /**
+     * Gets a list of files on this disk.
+     *
+     * @return A list of files
+     */
     public List<AllocationTableFile> getFiles() {
         return getFilesStream().toList();
     }
 
+    /**
+     * Gets a stream of all the files on this disk.
+     *
+     * @return A stream of files
+     */
     public Stream<AllocationTableFile> getFilesStream() {
         return fileEntriesByName()
                 .values().stream()
@@ -100,6 +156,11 @@ public class CpmDisk {
                 .flatMap(block -> Stream.of(block.getAllocationTable()));
     }
 
+    /**
+     * Gets a stream of the block points for every used block on this disk.
+     *
+     * @return A stream of block pointers
+     */
     public Stream<Long> getUsedBlocks() {
         return validEntries()
                 .flatMap(x -> x.getBlockPointers().stream());
@@ -110,6 +171,12 @@ public class CpmDisk {
                 .filter(validEntriesOnly());
     }
 
+    /**
+     * Gets a stream of block pointers for all unused
+     * blocks on this disk.
+     *
+     * @return A stream of block pointers
+     */
     public Stream<Long> getUnusedBlocks() {
         var usedBlocks = getUsedBlocks().toList();
         var usedAllocBlocks = allocationBlocks.stream()
@@ -119,24 +186,55 @@ public class CpmDisk {
                 .boxed();
     }
 
+    /**
+     * Gets a stream of entry locations for all used
+     * allocation entries on this disk.
+     *
+     * @return A stream of entry coordinates
+     */
     public Stream<EntryCoordinates> getUsedEntries() {
         return allocationBlocks.stream()
                 .flatMap(x -> x.getUsedEntries().map(y -> new EntryCoordinates(x.getIndex(), y)));
     }
 
+    /**
+     * Gets a stream of entry locations for all unused
+     * allocation entries on this disk.
+     *
+     * @return A stream of entry coordinates
+     */
     public Stream<EntryCoordinates> getUnusedEntries() {
         return allocationBlocks.stream()
                 .flatMap(x -> x.getUnusedEntries().map(y -> new EntryCoordinates(x.getIndex(), y)));
     }
 
+    /**
+     * Gets the disk parameters for this disk.
+     *
+     * @return A disk parameter block
+     */
     public DiskParameterBlock getDpb() {
         return dpb;
     }
 
+    /**
+     * Gets the size of the filesystem according
+     * to the disk parameters.
+     *
+     * @return A size
+     */
     public long size() {
         return dpb.getFilesystemSize();
     }
 
+    /**
+     * Looks for a file with the specified name
+     * on this disk.
+     *
+     * @param filename The full name of the file.
+     * @param stat The user number for the file.
+     * @return An optional with the file if found.
+     */
     public Optional<AllocationTableFile> findFile(@NotNull String filename, int stat) {
         return getFilesStream()
                 .filter(x -> x.getFilename().equalsIgnoreCase(filename))
@@ -144,6 +242,17 @@ public class CpmDisk {
                 .findFirst();
     }
 
+    /**
+     * Creates a new file on this disk.
+     *
+     * @param filename The complete name of the new file
+     * @param stat The user number of the new file
+     * @param flags The flags for the new file
+     * @param buffer The contents of the new file
+     * @return A file entry
+     * @throws IOException For general I/O errors
+     * @throws FileAlreadyExistsException If this disk already contains a file with the supplied name.
+     */
     public AllocationTableFile createFile(@NotNull String filename, int stat, @NotNull BitSet flags, @NotNull ByteBuffer buffer) throws IOException {
         if (findFile(filename, stat).isPresent()) {
             throw new FileAlreadyExistsException(stat + ": " + filename);
@@ -198,6 +307,16 @@ public class CpmDisk {
         return new AllocationTableFile(entries, dpb, buffer);
     }
 
+    /**
+     * Deletes a file from this disk by marking its allocation table
+     * entries with the delete stat (0xE5). The reminder of each entry
+     * as well of the files block will remain untouched.
+     *
+     * @param filename The complete name of the file
+     * @param stat The user number of the file
+     * @throws IOException For general I/O errors
+     * @throws FileNotFoundException If no file is found with the supplied name and user number.
+     */
     public void deleteFile(@NotNull String filename, int stat) throws IOException {
         var file = getFilesStream()
                 .filter(x -> x.getFilename().equalsIgnoreCase(filename))
@@ -210,6 +329,11 @@ public class CpmDisk {
         refresh();
     }
 
+    /**
+     * Gets the list of allocation blocks on this disk.
+     *
+     * @return A list of blocks
+     */
     public List<AllocationBlock> getAllocationBlocks() {
         return allocationBlocks;
     }

@@ -12,8 +12,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
 
+/**
+ * Represents a single entry on the file allocation table.
+ * A file can be represented as one or more table entries.
+ */
 public class AllocationTableEntry {
+
+    /**
+     * Number of bytes in a single filesystem record.
+     */
     public static final int RECORD_LEN = 128;
+
     private final int stat;
     private String filename;
     private String extension;
@@ -28,6 +37,17 @@ public class AllocationTableEntry {
 
     private final DiskParameterBlock dpb;
 
+    /**
+     * Creates a file allocation table entry based on a set of parameters.
+     *
+     * @param allocBlockPointer Block pointer to the allocation block containing this entry.
+     * @param index Tables index containing this entry.
+     * @param stat Stat value. Usually the user number.
+     * @param extent The extent number for this entry.
+     * @param filename The file name for this entry.
+     * @param flags The flag bits for this entry.
+     * @param dpb The disk parameters to use when constructing this entry.
+     */
     public AllocationTableEntry(long allocBlockPointer, int index, int stat, int extent, @NotNull String filename, @NotNull BitSet flags, @NotNull DiskParameterBlock dpb) {
         var split = filename.split("\\.");
         this.filename = split[0];
@@ -42,6 +62,14 @@ public class AllocationTableEntry {
         blockPointers = new LinkedList<>();
     }
 
+    /**
+     * Creates a file allocation table entry based on the bytes of an entry.
+     *
+     * @param allocBlockPointer Block pointer to the allocation block containing this entry.
+     * @param index Tables index containing this entry.
+     * @param entryBytes The array of bytes representing the entry.
+     * @param dpb The disk parameters to use when parsing this entry.
+     */
     public AllocationTableEntry(long allocBlockPointer, int index, @NotNull byte[] entryBytes, @NotNull DiskParameterBlock dpb) {
         this.index = index;
         this.allocBlockPointer = allocBlockPointer;
@@ -81,7 +109,12 @@ public class AllocationTableEntry {
 
     }
 
-    public byte[] encode() {
+    /**
+     * Encodes the entry to bytes.
+     *
+     * @return Bytes of the entry.
+     */
+    protected byte[] encode() {
         byte[] bytes = new byte[AllocationBlock.ENTRY_SIZE];
 
         // Set stat value, used as user number
@@ -132,70 +165,114 @@ public class AllocationTableEntry {
         return bytes;
     }
 
+    /**
+     * Writes this entry to a disk image.
+     *
+     * @param buffer The ByteBuffer of the disk image to write to.
+     * @throws IOException If a filesystem error occurs.
+     */
     public void writeEntry(ByteBuffer buffer) throws IOException {
         buffer.put((int) (allocBlockPointer * dpb.getBlockSize() + AllocationBlock.ENTRY_SIZE * index), encode());
     }
 
+    /**
+     * Computes the complete file name including the extension if any.
+     *
+     * @return The full file name
+     */
     public String getFullFilename() {
         return filename + (extension.isBlank() ? "" : "." + extension);
     }
 
+    /**
+     * Get the stat byte for this file. This usually represents the user number.
+     *
+     * @return The stat byte
+     */
     public int getStat() {
         return stat;
     }
 
+    /**
+     * Gets the name portion of the file's name.
+     *
+     * @return The name.
+     */
     public String getFilename() {
         return filename;
     }
 
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
-
+    /**
+     * Gets the extension portion of the file's name.
+     *
+     * @return The extention.
+     */
     public String getExtension() {
         return extension;
     }
 
-    public void setExtension(String extension) {
-        this.extension = extension;
-    }
-
+    /**
+     * Gets the flag bits for the file entry.
+     *
+     * @return The flag bits
+     */
     public BitSet getFlags() {
         return flags;
     }
 
-    public void setFlags(BitSet flags) {
-        this.flags = flags;
-    }
-
+    /**
+     * Gets the extent number that indicate index in
+     * the collection of entries of this entry.
+     *
+     * @return The extent number.
+     */
     public int getExtent() {
         return extent;
     }
 
+    /**
+     * Gets the record count. This is the number of
+     * 128 byte records that make up this entry.
+     *
+     * @return The count of records.
+     */
     public int getRecordCount() {
         return recordCount;
     }
 
-    public void setRecordCount(int recordCount) {
-        this.recordCount = recordCount;
-    }
-
+    /**
+     * Gets the BC byte. Used only by CP/M 3 and above.
+     *
+     * @return The BC byte.
+     */
     public int getBc() {
         return bc;
     }
 
-    public void setBc(int bc) {
-        this.bc = bc;
-    }
-
+    /**
+     * Gets the list of block pointers for this entry.
+     * There can be up to 8 block pointers in an entry.
+     *
+     * @return A list of block pointers
+     */
     public List<Long> getBlockPointers() {
         return blockPointers;
     }
 
+    /**
+     * Gets the index of this entry within it's allocation table.
+     *
+     * @return The index
+     */
     public int getIndex() {
         return index;
     }
 
+    /**
+     * Gets the block pointer for this entry's allocation block.
+     *
+     * @return The block pointer
+     */
     public long getAllocBlockPointer() {
         return allocBlockPointer;
     }
