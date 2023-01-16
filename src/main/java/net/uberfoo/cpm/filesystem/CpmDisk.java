@@ -325,7 +325,7 @@ public class CpmDisk {
 
         if (file == null) throw new FileNotFoundException(stat + ": " + filename);
 
-        file.delete(buffer);
+        file.delete();
         refresh();
     }
 

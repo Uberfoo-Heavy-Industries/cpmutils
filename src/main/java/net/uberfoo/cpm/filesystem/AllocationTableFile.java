@@ -89,7 +89,12 @@ public class AllocationTableFile {
         return buff;
     }
 
-    void delete(ByteBuffer buffer) throws IOException {
+    /**
+     * Deletes this file from the file allocation directory by marking all of it's entries with 0xE5
+     *
+     * @throws IOException For general I/O errors
+     */
+    public void delete() throws IOException {
         for (CpmDisk.EntryCoordinates x : allocationIndexes) {
             // Write unused byte to start of entry
             buffer.put((int) ((x.block() * diskParameterBlock.getBlockSize()) + diskParameterBlock.getOffsetBytes()
