@@ -132,6 +132,8 @@ public class CpmDisk {
     public Stream<AllocationTableFile> getFilesStream() {
         return fileEntriesByName()
                 .values().stream()
+                .map(Map::values)
+                .flatMap(Collection::stream)
                 .map(entries -> new AllocationTableFile(entries, dpb, buffer));
     }
 
@@ -141,9 +143,9 @@ public class CpmDisk {
         allocationBlocks.add(new AllocationBlock(index, buff, dpb));
     }
 
-    private Map<String, List<AllocationTableEntry>> fileEntriesByName() {
+    private Map<Integer, Map<String, List<AllocationTableEntry>>> fileEntriesByName() {
         return validEntries()
-                .collect(Collectors.groupingBy(x -> x.getFullFilename()));
+                .collect(Collectors.groupingBy(x -> x.getStat(), Collectors.groupingBy(x -> x.getFullFilename())));
     }
 
     @Contract(pure = true)
