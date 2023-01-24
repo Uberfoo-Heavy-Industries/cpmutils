@@ -1,12 +1,12 @@
-package net.uberfoo.cpm.filesystem.test;
+package net.uberfoo.cpm.filesystem;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-
-import net.uberfoo.cpm.filesystem.AllocationTableEntry;
+import net.uberfoo.cpm.filesystem.test.TestDiskParameterBlocks;
 import org.junit.jupiter.api.Test;
 
 import java.nio.ByteBuffer;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 public class AllocationTableEntryTest {
 
@@ -156,36 +156,38 @@ public class AllocationTableEntryTest {
     @Test
     public void testEncodeFromDecodes() throws Exception {
         var buffer = ByteBuffer.allocate((int)TestDiskParameterBlocks.Z80RB_DPB.getFilesystemSize());
+        var disk = new CpmDisk(TestDiskParameterBlocks.Z80RB_DPB, buffer);
+
         var entry = new AllocationTableEntry(0, 0, BIGTREK_ENTRY_1, TestDiskParameterBlocks.Z80RB_DPB);
-        entry.writeEntry(buffer);
+        disk.writeAllocEntry(0, 0, entry.encode());
 
         var bufferSlice = buffer.slice(0, 32);
         assertThat(bufferSlice, equalTo(ByteBuffer.wrap(BIGTREK_ENTRY_1)));
 
         buffer.clear();
         entry = new AllocationTableEntry(0, 2, BIGTREK_ENTRY_2, TestDiskParameterBlocks.Z80RB_DPB);
-        entry.writeEntry(buffer);
+        disk.writeAllocEntry(0, 2, entry.encode());
 
         bufferSlice = buffer.slice(2 * 32, 32);
         assertThat(bufferSlice, equalTo(ByteBuffer.wrap(BIGTREK_ENTRY_2)));
 
         buffer.clear();
         entry = new AllocationTableEntry(0, 16, TESTTXT_ENTRY_1, TestDiskParameterBlocks.Z80RB_DPB);
-        entry.writeEntry(buffer);
+        disk.writeAllocEntry(0, 16, entry.encode());
 
         bufferSlice = buffer.slice(16 * 32, 32);
         assertThat(bufferSlice, equalTo(ByteBuffer.wrap(TESTTXT_ENTRY_1)));
 
         buffer.clear();
         entry = new AllocationTableEntry(4, 0, TESTTXT_ENTRY_2, TestDiskParameterBlocks.Z80RB_DPB);
-        entry.writeEntry(buffer);
+        disk.writeAllocEntry(4, 0, entry.encode());
 
         bufferSlice = buffer.slice(TestDiskParameterBlocks.Z80RB_DPB.getBlockSize() * 4, 32);
         assertThat(bufferSlice, equalTo(ByteBuffer.wrap(TESTTXT_ENTRY_2)));
 
         buffer.clear();
         entry = new AllocationTableEntry(3, 33, TESTTXT_ENTRY_3, TestDiskParameterBlocks.Z80RB_DPB);
-        entry.writeEntry(buffer);
+        disk.writeAllocEntry(3, 33, entry.encode());
 
         bufferSlice = buffer.slice((TestDiskParameterBlocks.Z80RB_DPB.getBlockSize() * 3) + (33 * 32), 32);
         assertThat(bufferSlice, equalTo(ByteBuffer.wrap(TESTTXT_ENTRY_3)));

@@ -1,16 +1,15 @@
 package net.uberfoo.cpm.filesystem;
 
-import static java.lang.Math.*;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
+
+import static java.lang.Math.ceilDiv;
 
 /**
  * Represents a single entry on the file allocation table.
@@ -166,13 +165,13 @@ public class AllocationTableEntry {
     }
 
     /**
-     * Writes this entry to a disk image.
+     * Writes this entry to a disk.
      *
-     * @param buffer The ByteBuffer of the disk image to write to.
+     * @param disk CP/M disk image to write entry to.
      * @throws IOException If a filesystem error occurs.
      */
-    public void writeEntry(ByteBuffer buffer) throws IOException {
-        buffer.put((int) (allocBlockPointer * dpb.getBlockSize() + AllocationBlock.ENTRY_SIZE * index), encode());
+    void writeEntry(CpmDisk disk) {
+        disk.writeAllocEntry(allocBlockPointer, index, encode());
     }
 
     /**

@@ -1,7 +1,7 @@
 package net.uberfoo.cpm.filesystem.test;
 
-import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.AllocationTableFile;
+import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.DiskParameterBlock;
 import org.hamcrest.MatcherAssert;
 import org.jetbrains.annotations.NotNull;
@@ -14,9 +14,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.BitSet;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static java.lang.Math.*;
+import static java.lang.Math.ceilDiv;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 public class CpmDiskTest {
 
@@ -89,6 +90,29 @@ public class CpmDiskTest {
         disk.refresh();
         fileBuffer.rewind();
         assertFileIsCorrect(fileBuffer, disk.findFile("BIGTREK2.BAS", 0x00).orElseThrow());
+
+    }
+
+    @Test
+    public void testFromCpmDisk() throws Exception {
+        var diskBuffer = loadFilesystem("cpm22.img", TestDiskParameterBlocks.Z80RB_BOOT_DPB);
+        var disk = new CpmDisk(TestDiskParameterBlocks.Z80RB_BOOT_DPB, diskBuffer);
+
+        var fileBuffer = loadFile("sample-2mb-text-file.txt");
+        disk.createFile("large1",  0x00, new BitSet(11), fileBuffer);
+        disk.refresh();
+        fileBuffer.rewind();
+        //assertEquals(-1 , fileBuffer.mismatch(disk.findFile("large1", 0x00).orElseThrow().retrieveFileContents()));
+        assertFileIsCorrect(fileBuffer, disk.findFile("large1", 0x00).orElseThrow());
+
+        disk.deleteFile("large1", 0x00);
+        assertThat("file is deleted", disk.findFile("large1", 0x00).isEmpty());
+    }
+
+    @Test
+    public void testFromOsborne1Disk() throws Exception {
+        var diskBuffer = loadFilesystem("o1.img", TestDiskParameterBlocks.OSBORNE_1_DPB);
+        var disk = new CpmDisk(TestDiskParameterBlocks.OSBORNE_1_DPB, diskBuffer);
 
     }
 

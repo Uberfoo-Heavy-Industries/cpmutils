@@ -34,18 +34,7 @@ public class CpmDiskIntegrationTest {
             input.read(inputBuffer);
             inputBuffer.rewind();
 
-            var dpb = new DiskParameterBlock(
-                    512,
-                    5,
-                    31,
-                    1,
-                    2047,
-                    511,
-                    240,
-                    0,
-                    0,
-                    0
-            );
+            var dpb = TestDiskParameterBlocks.Z80RB_DPB;
             CpmDisk disk = new CpmDisk(dpb, fileBuffer);
 
 
