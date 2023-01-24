@@ -134,10 +134,9 @@ public class CpmDisk {
     public Stream<AllocationTableFile> getFilesStream() {
         return fileEntriesByName()
                 .values().stream()
-
                 .map(Map::values)
                 .flatMap(Collection::stream)
-                .map(entries -> new AllocationTableFile(entries, dpb, buffer));
+                .map(entries -> new AllocationTableFile(entries, dpb, this));
     }
 
     private void readAllocBlock(int i) throws IOException {
