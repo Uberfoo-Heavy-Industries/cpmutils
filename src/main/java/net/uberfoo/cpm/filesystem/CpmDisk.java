@@ -134,16 +134,9 @@ public class CpmDisk {
     public Stream<AllocationTableFile> getFilesStream() {
         return fileEntriesByName()
                 .values().stream()
-
                 .map(Map::values)
                 .flatMap(Collection::stream)
-                .map(entries -> new AllocationTableFile(entries, dpb, buffer));
-    }
-
-    private void readAllocBlock(int i) throws IOException {
-        int index = 15 - i;
-        var buff = readBlock(index);
-        allocationBlocks.add(new AllocationBlock(index, buff, dpb));
+                .map(entries -> new AllocationTableFile(entries, dpb, this));
     }
 
     private Map<Integer, Map<String, List<AllocationTableEntry>>> fileEntriesByName() {
@@ -375,6 +368,12 @@ public class CpmDisk {
             outBuff.put(buffer.slice(address, dpb.sectorSize()));
         }
         return outBuff.rewind();
+    }
+
+    private void readAllocBlock(int i) throws IOException {
+        int index = 15 - i;
+        var buff = readBlock(index);
+        allocationBlocks.add(new AllocationBlock(index, buff, dpb));
     }
 
     private int getPhysicalAddress(long blockPointer, int i) {
