@@ -1,5 +1,7 @@
 package net.uberfoo.cpm.filesystem;
 
+import java.io.Serializable;
+
 /**
  * Represents the parameters of a CP/M disk.
  *
@@ -27,7 +29,7 @@ public record DiskParameterBlock(
         int checkVectorSize,
         int offset,
         int[] skewTab
-) {
+) implements Serializable {
 
     /**
      * Translates a logical sector into a physical sector.
