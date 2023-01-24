@@ -12,5 +12,5 @@ Configuration:
       AppenderRef:
         - ref: Console
     Logger:
-      - name: net.uberfoo.cpm22.filesystem
+      - name: net.uberfoo.cpm.filesystem
         level: trace

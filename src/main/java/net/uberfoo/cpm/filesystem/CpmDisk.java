@@ -25,6 +25,8 @@ import java.util.stream.Stream;
  */
 public class CpmDisk {
 
+    private static final int REC_SZ = DiskParameterBlock.getRecordSize();
+    private static final byte[] DELETE_FLAG = new byte[] {(byte)0xE5};
     private static final Logger LOG = LoggerFactory.getLogger(CpmDisk.class);
 
     /**
@@ -132,6 +134,7 @@ public class CpmDisk {
     public Stream<AllocationTableFile> getFilesStream() {
         return fileEntriesByName()
                 .values().stream()
+
                 .map(Map::values)
                 .flatMap(Collection::stream)
                 .map(entries -> new AllocationTableFile(entries, dpb, buffer));
@@ -139,7 +142,7 @@ public class CpmDisk {
 
     private void readAllocBlock(int i) throws IOException {
         int index = 15 - i;
-        var buff = buffer.slice((dpb.getBlockSize() * index) + dpb.getOffsetBytes(), dpb.getBlockSize());
+        var buff = readBlock(index);
         allocationBlocks.add(new AllocationBlock(index, buff, dpb));
     }
 
@@ -267,6 +270,10 @@ public class CpmDisk {
 
         var blocks = getUnusedBlocks().limit(numBlocks).toList();
 
+        if (blocks.size() < numBlocks) {
+            throw new IOException("No space left on disk!");
+        }
+
         int ex = 0;
 
         // Write the blocks to disk
@@ -303,10 +310,10 @@ public class CpmDisk {
 
         // Write the file entries
         for (var entry : entries) {
-            entry.writeEntry(this.buffer);
+            entry.writeEntry(this);
         }
 
-        return new AllocationTableFile(entries, dpb, buffer);
+        return new AllocationTableFile(entries, dpb, this);
     }
 
     /**
@@ -323,9 +330,7 @@ public class CpmDisk {
         var file = getFilesStream()
                 .filter(x -> x.getFilename().equalsIgnoreCase(filename))
                 .filter(x -> x.getStat() == stat)
-                .findFirst().orElseGet(() -> null);
-
-        if (file == null) throw new FileNotFoundException(stat + ": " + filename);
+                .findFirst().orElseThrow(() -> new FileNotFoundException(stat + ": " + filename));
 
         file.delete();
         refresh();
@@ -340,7 +345,45 @@ public class CpmDisk {
         return allocationBlocks;
     }
 
-    private void writeBlock(long blockPointer, @NotNull ByteBuffer block) throws IOException {
-        buffer.put((int) ((blockPointer * dpb.getBlockSize()) + dpb.getOffsetBytes()), block, 0, block.remaining());
+    void writeBlock(long blockPointer, @NotNull ByteBuffer block) throws IOException {
+        for (int i = 0; i < dpb.getBlockSectorCount(); i++) {
+            int physicalAddress = getPhysicalAddress(blockPointer, i);
+            buffer.put(physicalAddress, block, i * dpb.sectorSize(), dpb.sectorSize());
+        }
+    }
+
+    void writeAllocEntry(long allocBlockPointer, int index, byte[] entry) {
+        var offset = AllocationBlock.ENTRY_SIZE * index;
+        var i = Math.floorDiv(offset, dpb.sectorSize());
+        offset = offset % dpb.sectorSize();
+        buffer.put(getPhysicalAddress(allocBlockPointer, i) + offset, entry);
+    }
+
+    void deleteAllocEntry(long allocBlockPointer, int index) {
+        writeAllocEntry(allocBlockPointer, index, DELETE_FLAG);
+    }
+
+    /**
+     * Reassembles a complete block from records based on skew table
+     *
+     * @return A block sized buffer
+     */
+    ByteBuffer readBlock(long blockPointer) {
+        var outBuff = ByteBuffer.allocate(dpb.getBlockSize());
+        for (int i = 0; i < dpb.getBlockSectorCount(); i++) {
+            var address = getPhysicalAddress(blockPointer, i);
+            outBuff.put(buffer.slice(address, dpb.sectorSize()));
+        }
+        return outBuff.rewind();
+    }
+
+    private int getPhysicalAddress(long blockPointer, int i) {
+        var address = (blockPointer * dpb.getBlockSize()) + dpb.getOffsetBytes();
+        var logicalSector = (int)Math.floorDiv(address, dpb.sectorSize()) + i;
+        var logicalTrackSector = logicalSector % dpb.getSectorsPerTrack();
+        var track = Math.floorDiv(logicalSector, dpb.getSectorsPerTrack());
+        var physicalTrackSector = dpb.translateSector(logicalTrackSector);
+        var physicalAddress = (track * dpb.getSectorsPerTrack() + physicalTrackSector) * dpb.sectorSize();
+        return physicalAddress;
     }
 }

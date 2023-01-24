@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Represents the parameters of a CP/M disk.
  *
- * @param sectorsPerTack Number of sectors on each track.
+ * @param recordsPerTack Number of sectors on each track.
  * @param blockShiftFactor Block shift factor.
  * @param blockMask Block mask.
  * @param extentMask Mask to use on RC lower bit for extent high bits.
@@ -17,8 +17,8 @@ import java.io.Serializable;
  * @param offset Number of tracks to skip at the beginning of the disk.
  */
 public record DiskParameterBlock(
-
-        int sectorsPerTack,
+        int sectorSize,
+        int recordsPerTack,
         int blockShiftFactor,
         int blockMask,
         int extentMask,
@@ -27,9 +27,22 @@ public record DiskParameterBlock(
         int directoryAllocationBitmap1,
         int directoryAllocationBitmap2,
         int checkVectorSize,
-        int offset
-
+        int offset,
+        int[] skewTab
 ) implements Serializable {
+
+    /**
+     * Translates a logical sector into a physical sector.
+     *
+     * @param sector Sector number of track
+     *
+     * @return Physical sector number
+     */
+    public int translateSector(int sector) {
+        if (skewTab.length == 0) return sector;
+        return skewTab[sector];
+    }
+
     /**
      * Computes the size of a single block according to the parameters.
      *
@@ -45,7 +58,7 @@ public record DiskParameterBlock(
      * @return An offset in bytes
      */
     public int getOffsetBytes() {
-        return (sectorsPerTack * 128) * offset;
+        return (recordsPerTack * 128) * offset;
     }
 
     /**
@@ -55,6 +68,15 @@ public record DiskParameterBlock(
      */
     public int getBlockRecordCount() {
         return (int)(getBlockSize() / 128);
+    }
+
+    /**
+     * Computes the number of records in a block according to the parameters.
+     *
+     * @return A number of records
+     */
+    public int getBlockSectorCount() {
+        return (int)(getBlockSize() / sectorSize);
     }
 
     /**
@@ -71,8 +93,26 @@ public record DiskParameterBlock(
      *
      * @return A size in bytes
      */
-    public long getFilesystemSize() {
+    public int getFilesystemSize() {
         return (storageSize + 1) * getBlockSize();
+    }
+
+    /**
+     * Computes the number of tracks on the disk.
+     *
+     * @return The number of tracks
+     */
+    public int getTrackCount() {
+        return getFilesystemSize() / (128 * recordsPerTack);
+    }
+
+    /**
+     * Computes the number of physical sectors on each track.
+     *
+     * @return Number of sectors
+     */
+    public int getSectorsPerTrack() {
+        return (recordsPerTack * 128) / sectorSize;
     }
 
     /**
@@ -80,5 +120,26 @@ public record DiskParameterBlock(
      *
      * @return A size in bytes
      */
-    public static final int getRecordSize() { return 128; }
+    public static int getRecordSize() { return 128; }
+
+    /**
+     * Computes a skew table for a given skew number and number of sectors.
+     *
+     * @param skew The skew factor
+     * @param sectorsPerTack Number of sectors
+     * @return A sector lookup table
+     */
+    public static int[] createSkewTab(int skew, int sectorsPerTack) {
+        var skewTab = new int[sectorsPerTack];
+        int k;
+        for (int i = 0, j = 0; i < sectorsPerTack; ++i, j = (j + skew) % sectorsPerTack) {
+            while (true) {
+                for (k = 0; k < i && skewTab[k] != j; ++k) ;
+                if (k < i) j = (j + 1) % sectorsPerTack;
+                else break;
+            }
+            skewTab[i] = j;
+        }
+        return skewTab;
+    }
 }

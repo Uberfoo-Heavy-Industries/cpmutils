@@ -28,24 +28,24 @@ public class AllocationTableFile {
 
     private final DiskParameterBlock diskParameterBlock;
 
-    private final ByteBuffer buffer;
+    private final CpmDisk disk;
 
     AllocationTableFile(int stat, @NotNull String filename, @NotNull BitSet flags,
-                               @NotNull DiskParameterBlock diskParameterBlock, @NotNull ByteBuffer buffer) {
+                               @NotNull DiskParameterBlock diskParameterBlock, @NotNull CpmDisk disk) {
         this.stat = stat;
         this.filename = filename;
         this.flags = flags;
         this.diskParameterBlock = diskParameterBlock;
-        this.buffer = buffer;
+        this.disk = disk;
         blockPointers = new LinkedList<>();
         allocationIndexes = new LinkedList<>();
     }
 
     AllocationTableFile(@NotNull List<AllocationTableEntry> tableEntries,
                         @NotNull DiskParameterBlock diskParameterBlock,
-                        @NotNull ByteBuffer buffer) {
+                        @NotNull CpmDisk disk) {
         this.diskParameterBlock = diskParameterBlock;
-        this.buffer = buffer;
+        this.disk = disk;
         blockPointers = new ArrayList<>(tableEntries.size() * 8);
         allocationIndexes = new ArrayList<>(tableEntries.size());
 
@@ -81,8 +81,7 @@ public class AllocationTableFile {
 
                     LOG.trace("allocating Block #{}: {}bytes", i, blockSize);
 
-                    ByteBuffer block = ByteBuffer.allocate(blockSize);
-                    return buffer.slice((int) (blockPointers.get(i).longValue() * diskParameterBlock.getBlockSize()), blockSize);
+                    return disk.readBlock(blockPointers.get(i)).slice(0, blockSize);
                 })
                 .forEachOrdered(buff::put);
 
@@ -91,14 +90,10 @@ public class AllocationTableFile {
 
     /**
      * Deletes this file from the file allocation directory by marking all of it's entries with 0xE5
-     *
-     * @throws IOException For general I/O errors
      */
-    public void delete() throws IOException {
+    public void delete() {
         for (CpmDisk.EntryCoordinates x : allocationIndexes) {
-            // Write unused byte to start of entry
-            buffer.put((int) ((x.block() * diskParameterBlock.getBlockSize()) + diskParameterBlock.getOffsetBytes()
-                    + (AllocationBlock.ENTRY_SIZE * x.index())), (byte)0xE5);
+            disk.deleteAllocEntry(x.block(), x.index());
         }
     }
 
