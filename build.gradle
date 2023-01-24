@@ -46,7 +46,7 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/Uberfoo-Heavy-Industries/z80utils"
+            url = "https://maven.pkg.github.com/Uberfoo-Heavy-Industries/cpmutils"
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
                 password = System.getenv("GITHUB_TOKEN")
