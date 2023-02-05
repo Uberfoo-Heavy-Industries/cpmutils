@@ -1,6 +1,8 @@
 package net.uberfoo.cpm.filesystem;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Represents the parameters of a CP/M disk.
@@ -141,5 +143,20 @@ public record DiskParameterBlock(
             skewTab[i] = j;
         }
         return skewTab;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DiskParameterBlock that = (DiskParameterBlock) o;
+        return sectorSize == that.sectorSize && recordsPerTack == that.recordsPerTack && blockShiftFactor == that.blockShiftFactor && blockMask == that.blockMask && extentMask == that.extentMask && storageSize == that.storageSize && numDirectoryEntries == that.numDirectoryEntries && directoryAllocationBitmap1 == that.directoryAllocationBitmap1 && directoryAllocationBitmap2 == that.directoryAllocationBitmap2 && checkVectorSize == that.checkVectorSize && offset == that.offset && Arrays.equals(skewTab, that.skewTab);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(sectorSize, recordsPerTack, blockShiftFactor, blockMask, extentMask, storageSize, numDirectoryEntries, directoryAllocationBitmap1, directoryAllocationBitmap2, checkVectorSize, offset);
+        result = 31 * result + Arrays.hashCode(skewTab);
+        return result;
     }
 }
