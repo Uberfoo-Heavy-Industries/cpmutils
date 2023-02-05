@@ -92,6 +92,20 @@ public class CpmDisk {
         return new CpmDisk(dpb, buffer.slice(start, (int)dpb.getFilesystemSize()));
     }
 
+    /**
+     * Creates a new filesystem according to the supplied
+     * disk parameters. The method will create a new buffer
+     * with 0xE5 for block size bytes for the number of blocks
+     * according to the disk parameters.
+     *
+     * @param dpb The disk parameters.
+     * @return A CpmDisk instance representing the new filesystem.
+     * @throws IOException If an error occurs with the buffer.
+     */
+    public static CpmDisk makeFilesystem(DiskParameterBlock dpb) throws IOException {
+        return makeFilesystem(dpb, ByteBuffer.allocate(dpb.getFilesystemSize()));
+    }
+
     private void parseAllocationBlocks() throws IOException {
         allocationBlocks = new LinkedList<>();
         int dirMask = (dpb.directoryAllocationBitmap1() << 8) + dpb.directoryAllocationBitmap2();
@@ -137,6 +151,10 @@ public class CpmDisk {
                 .map(Map::values)
                 .flatMap(Collection::stream)
                 .map(entries -> new AllocationTableFile(entries, dpb, this));
+    }
+
+    public ByteBuffer getBuffer() {
+        return buffer.duplicate();
     }
 
     private Map<Integer, Map<String, List<AllocationTableEntry>>> fileEntriesByName() {
