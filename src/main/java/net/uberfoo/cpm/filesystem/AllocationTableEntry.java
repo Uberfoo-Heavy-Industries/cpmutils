@@ -9,7 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static java.lang.Math.ceilDiv;
+import static java.lang.Math.*;
 
 /**
  * Represents a single entry on the file allocation table.
@@ -50,7 +50,7 @@ public class AllocationTableEntry {
     public AllocationTableEntry(long allocBlockPointer, int index, int stat, int extent, @NotNull String filename, @NotNull BitSet flags, @NotNull DiskParameterBlock dpb) {
         var split = filename.split("\\.");
         this.filename = split[0];
-        this.extension = split.length > 1 ? split[1].substring(0, 3) : "";
+        this.extension = split.length > 1 ? split[1].substring(0, min(split[1].length(), 3)) : "";
 
         this.stat = stat;
         this.flags = flags;
