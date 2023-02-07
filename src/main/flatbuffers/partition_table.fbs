@@ -1,0 +1,24 @@
+namespace net.uberfoo.cpm.filesystem;
+
+table CpmPartitionTableEntry {
+    label:string;
+    offset:uint;
+    sector_size:ushort;
+    records_per_track:ushort;
+    block_shift_factor:ubyte;
+    block_mask:ubyte;
+    extent_mask:ubyte;
+    storage_size:ushort;
+    num_directory_entries:ushort;
+    directory_allocation_bitmap1:ubyte;
+    directory_allocation_bitmap2:ubyte;
+    check_vector_size:ushort;
+    track_offset:ushort;
+    skew_tab:[ushort];
+}
+
+table EncodedPartitionTable {
+    entries:[CpmPartitionTableEntry];
+}
+
+root_type EncodedPartitionTable;
