@@ -45,6 +45,10 @@ task createFlatBuffers(type: FlatBuffers) {
     outputDir = file("build/generated/sources/flatbuffers")
 }
 
+compileJava {
+    dependsOn += createFlatBuffers
+}
+
 test {
     useJUnitPlatform()
 }
