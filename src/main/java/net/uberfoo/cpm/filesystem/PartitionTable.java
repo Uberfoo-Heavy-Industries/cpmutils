@@ -1,11 +1,10 @@
 package net.uberfoo.cpm.filesystem;
 
+import com.google.flatbuffers.FlatBufferBuilder;
+
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,13 +34,16 @@ public class PartitionTable {
         }
 
         var size = buffer.getInt(buffer.limit() - Integer.BYTES);
-        var arr = new byte[size];
-        buffer.get(buffer.limit() - size - HEADER_SIZE, arr);
-        var bais = new ByteArrayInputStream(arr);
-        var in = new ObjectInputStream(bais);
+        var slice = buffer.slice(buffer.limit() - size - HEADER_SIZE, size);
 
-        entries = (List<PartitionTableEntry>)in.readObject();
-    }
+        var encodedTable = EncodedPartitionTable.getRootAsEncodedPartitionTable(slice);
+
+        entries = new ArrayList<>(encodedTable.entriesLength());
+        for (int i = 0; i < encodedTable.entriesLength(); i++) {
+            var entry = encodedTable.entries(i);
+            entries.add(new PartitionTableEntry((int)entry.offset(), entry.label(), new DiskParameterBlock(entry)));
+        }
+   }
 
     /**
      * Encodes this table into disk format. The encoded format
@@ -54,18 +56,46 @@ public class PartitionTable {
      * @throws IOException
      */
     public ByteBuffer encode() throws IOException {
-        var baos = new ByteArrayOutputStream();
-        var out = new ObjectOutputStream(baos);
+        FlatBufferBuilder builder = new FlatBufferBuilder(0);
 
-        out.writeObject(entries);
-        var size = baos.size();
+        var entriesArr = new int[entries.size()];
+        for (int i = 0; i < entries.size(); i++) {
+            var entry = entries.get(i);
+            var label = builder.createString(entry.label());
+            var dpb = entry.diskParameterBlock();
+            var skewTab = CpmPartitionTableEntry.createSkewTabVector(builder, dpb.skewTab());
+            var encodedEntry = CpmPartitionTableEntry.createCpmPartitionTableEntry(builder,
+                    label,
+                    entry.offset(),
+                    dpb.sectorSize(),
+                    dpb.recordsPerTack(),
+                    dpb.blockShiftFactor(),
+                    dpb.blockMask(),
+                    dpb.extentMask(),
+                    dpb.storageSize(),
+                    dpb.numDirectoryEntries(),
+                    dpb.directoryAllocationBitmap1(),
+                    dpb.directoryAllocationBitmap2(),
+                    dpb.checkVectorSize(),
+                    dpb.offset(),
+                    skewTab
+                    );
+            entriesArr[i] = encodedEntry;
+        }
+        var entriesVec = EncodedPartitionTable.createEntriesVector(builder, entriesArr);
 
+        EncodedPartitionTable.startEncodedPartitionTable(builder);
+        EncodedPartitionTable.addEntries(builder, entriesVec);
+        var table = EncodedPartitionTable.endEncodedPartitionTable(builder);
+        builder.finish(table);
+
+        var tableBuffer = builder.sizedByteArray();
+        var size = tableBuffer.length;
         ByteBuffer buffer = ByteBuffer.allocate(size + HEADER_SIZE);
-        buffer.put(baos.toByteArray());
+
+        buffer.put(tableBuffer);
         buffer.put(MAGIC);
         buffer.putInt(size);
-
-        baos.close();
 
         return buffer.rewind();
     }

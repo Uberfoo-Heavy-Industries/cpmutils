@@ -33,6 +33,26 @@ public record DiskParameterBlock(
         int[] skewTab
 ) implements Serializable {
 
+    public DiskParameterBlock(CpmPartitionTableEntry tableEntry) {
+        this(
+                tableEntry.sectorSize(),
+                tableEntry.recordsPerTrack(),
+                tableEntry.blockShiftFactor(),
+                tableEntry.blockMask(),
+                tableEntry.extentMask(),
+                tableEntry.storageSize(),
+                tableEntry.numDirectoryEntries(),
+                tableEntry.directoryAllocationBitmap1(),
+                tableEntry.directoryAllocationBitmap2(),
+                tableEntry.checkVectorSize(),
+                tableEntry.trackOffset(),
+                new int[tableEntry.skewTabLength()]
+        );
+
+        for (int i = 0; i < tableEntry.skewTabLength(); i++)
+            skewTab[i] = tableEntry.skewTab(i);
+    }
+
     /**
      * Translates a logical sector into a physical sector.
      *

@@ -11,10 +11,15 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v3.3.0
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
+      - name: Install flatc
+        run: |
+          sudo apt-get update
+          sudo apt install -y flatbuffers-compiler
       - uses: actions/setup-java@v3.9.0
         with:
-          java-version: '19.0.1'
+          java-version: '19.0.2'
           distribution: 'adopt'
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1.0.5

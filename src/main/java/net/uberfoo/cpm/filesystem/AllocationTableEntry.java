@@ -113,7 +113,7 @@ public class AllocationTableEntry {
      *
      * @return Bytes of the entry.
      */
-    protected byte[] encode() {
+    public byte[] encode() {
         byte[] bytes = new byte[AllocationBlock.ENTRY_SIZE];
 
         // Set stat value, used as user number

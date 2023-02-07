@@ -363,7 +363,7 @@ public class CpmDisk {
         }
     }
 
-    void writeAllocEntry(long allocBlockPointer, int index, byte[] entry) {
+    public void writeAllocEntry(long allocBlockPointer, int index, byte[] entry) {
         var offset = AllocationBlock.ENTRY_SIZE * index;
         var i = Math.floorDiv(offset, dpb.sectorSize());
         offset = offset % dpb.sectorSize();
