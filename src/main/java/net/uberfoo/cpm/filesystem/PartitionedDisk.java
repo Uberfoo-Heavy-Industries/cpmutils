@@ -12,14 +12,16 @@ public class PartitionedDisk {
         disks = new LinkedList<>();
     }
 
-    public PartitionedDisk(ByteBuffer buffer) throws IOException, ClassNotFoundException {
-        var table = new PartitionTable(buffer);
-
+    public PartitionedDisk(ByteBuffer buffer, PartitionTable table) throws IOException, ClassNotFoundException {
         disks = new ArrayList<>(table.size());
         for (var entry : table.getEntries()) {
             var diskBuffer = buffer.slice(entry.offset(), entry.diskParameterBlock().getFilesystemSize());
             disks.add(new LabeledDisk(entry.label(), new CpmDisk(entry.diskParameterBlock(), diskBuffer)));
         }
+    }
+
+    public PartitionedDisk(ByteBuffer buffer) throws IOException, ClassNotFoundException {
+        this(buffer, new PartitionTable(buffer));
     }
 
     public List<LabeledDisk> getDisks() {

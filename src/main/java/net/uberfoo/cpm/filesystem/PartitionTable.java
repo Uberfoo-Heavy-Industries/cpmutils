@@ -19,6 +19,10 @@ public class PartitionTable {
         entries = new LinkedList<>();
     }
 
+    public PartitionTable(List<PartitionTableEntry> entries) {
+        this.entries = entries;
+    }
+
     /**
      * Constructs a PartitionTable from a buffer containing the disk image.
      *
