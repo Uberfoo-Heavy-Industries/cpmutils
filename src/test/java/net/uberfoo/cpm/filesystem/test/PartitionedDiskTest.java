@@ -4,14 +4,12 @@ import net.uberfoo.cpm.filesystem.CpmDisk;
 import net.uberfoo.cpm.filesystem.DiskParameterBlock;
 import net.uberfoo.cpm.filesystem.LabeledDisk;
 import net.uberfoo.cpm.filesystem.PartitionedDisk;
-import net.uberfoo.cpm.filesystem.test.TestDiskParameterBlocks;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -45,6 +43,8 @@ public class PartitionedDiskTest {
 
         assertThat(partitionedDisk.getDisks(), hasSize(5));
         assertThat(partitionedDisk.get(0).disk().getBuffer().limit(), is(TestDiskParameterBlocks.Z80RB_BOOT_DPB.getFilesystemSize()));
+
+        Files.write(Path.of("table.bin"), buffer.array());
 
     }
 
