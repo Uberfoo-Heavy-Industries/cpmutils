@@ -40,6 +40,14 @@ public class PartitionedDisk {
         return disks.stream().filter(x -> x.label().equals(label)).findFirst();
     }
 
+    public int getDiskSize() {
+        return disks.stream()
+                .map(LabeledDisk::disk)
+                .map(CpmDisk::getDpb)
+                .mapToInt(DiskParameterBlock::getFilesystemSize)
+                .sum();
+    }
+
     public ByteBuffer createDisk() throws IOException {
         var table = createPartitionTable();
         var encodedTable = table.encode();
