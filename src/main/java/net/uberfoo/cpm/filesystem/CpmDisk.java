@@ -363,6 +363,13 @@ public class CpmDisk {
         }
     }
 
+    public void writeBootTracks(@NotNull ByteBuffer bootTracks) throws IOException {
+        if (dpb.getOffsetBytes() <= 0) {
+            throw new IOException("Disk has no boot sector.");
+        }
+        buffer.put(0, bootTracks, 0, Math.min(dpb.getOffsetBytes(), bootTracks.limit()));
+    }
+
     public void writeAllocEntry(long allocBlockPointer, int index, byte[] entry) {
         var offset = AllocationBlock.ENTRY_SIZE * index;
         var i = Math.floorDiv(offset, dpb.sectorSize());
